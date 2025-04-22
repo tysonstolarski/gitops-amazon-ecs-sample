@@ -1,0 +1,60 @@
+release: 4.0
+# preDeployTasks - (optional) if no pre-deploy tasks exists just remove the tasks array
+preDeployTasks:
+  - task: run-migrations
+    image: 11111111111.dkr.ecr.us-west-2.amazonaws.com/definitiv-migrations:2.0.0
+    cpu: 1 vCPU
+    memory: 4 GB
+    environment:
+      - name: DD_ENV
+        value: client-test
+      - name: Redis__ConnectionString
+        value: <ElastiCache Connection String here>
+    secrets:
+      - name: xyz
+        valueFrom: arn:aws:secretsmanager:region:aws_account_id:secret:some-secret-key
+  - task: write-deploy-logs
+    image: 11111111111.dkr.ecr.us-west-2.amazonaws.com/deploy-logger:2.0.0
+    environment:
+      - name: DD_ENV
+        value: client-test
+    cpu: 1 vCPU
+    memory: 2 GB
+services:
+    #service - must match a container name in the task definition's containerDefinitions array
+  - service: definitiv-api
+    # clusterName - Name of the ECS cluster where the service exists. Inferred from current environment folder.
+    # clusterName: client-prod
+    # serviceName - Name of the ECS service. Must already be provisioned via core terraform IaC.
+    serviceName: definitiv-api-TS6BT1U6VQBG-Service-HTco3SKTy2J1
+    # image - New image that you want to deploy.
+    image: 11111111111.dkr.ecr.us-east-1.amazonaws.com/definitiv-api:2.0.0
+    # environment - environment variables to merge with whats in the existing task definition (within the container definition that matches the service key, as documented above)
+    environment:
+      - name: Beam__ApiBaseUrl
+        value: https://api-acpt.beam.com.au
+      - name: DD_ENV
+        value: client-test
+    # secrets - environment secrets to merge with whats in the existing task definition (within the container definition that matches the service key, as documented above)
+    secrets:
+      - name: Beam__ApiKey
+        valueFrom: arn:aws:secretsmanager:region:aws_account_id:secret:BEAM_API_KEY_ACPT
+    # cpu - defines the cpu units of this service's task definition
+    cpu: 4 vCPU
+    # memory - defines the memory units of this service's task definition
+    memory: 8 GB
+  - service: definitiv-misc-worker
+    serviceName: demo-service-b-1OP5GR8JWHKX7-Service-ExB0A5Jxcnv2
+    image: 11111111111.dkr.ecr.us-east-1.amazonaws.com/definitiv-misc-worker:3.0.0
+    environment:
+      - name: DD_ENV
+        value: client-test
+      - name: Rebus__MaxMessageParallelism
+        value: 8
+  - service: definitiv-jsreport
+    clusterName: demo
+    serviceName: demo-service-c-1OP5GR8JWHKX7-Service-ExB0A5Jxcnv2
+    image: 11111111111.dkr.ecr.us-east-1.amazonaws.com/definitiv-jsreport:6.0.0
+    environment:
+      - name: DD_ENV
+        value: client-test

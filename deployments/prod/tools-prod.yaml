@@ -1,0 +1,43 @@
+release: 4.0
+# preDeployTasks - (optional) if no pre-deploy tasks exists just remove the tasks array
+# preDeployTasks:
+services:
+    #service - must match a container name in the task definition's containerDefinitions array
+  - service: definitiv-ops-control-panel-server
+    # serviceName - Name of the ECS service. Must already be provisioned via core terraform IaC.
+    serviceName: definitiv-ocp-server-TS6BT1U6VQBG-Service-HTco3SKTy2J1
+    # image - New image that you want to deploy.
+    image: 11111111111.dkr.ecr.us-east-1.amazonaws.com/definitiv-ops-control-panel-server:2.0.0
+    # environment - environment variables to merge with whats in the existing task definition (within the container definition that matches the service key, as documented above)
+    environment:
+      - name: Beam__ApiBaseUrl
+        value: https://api-acpt.beam.com.au
+      - name: DD_ENV
+        value: client-test
+    # secrets - environment secrets to merge with whats in the existing task definition (within the container definition that matches the service key, as documented above)
+    secrets:
+      - name: Beam__ApiKey
+        valueFrom: arn:aws:secretsmanager:region:aws_account_id:secret:BEAM_API_KEY_ACPT
+    # cpu - defines the cpu units of this service's task definition
+    cpu: 4 vCPU
+    # memory - defines the memory units of this service's task definition
+    memory: 8 GB
+  - service: definitiv-ops-control-panel-agent
+    # serviceName - Name of the ECS service. Must already be provisioned via core terraform IaC.
+    serviceName: definitiv-ocp-agent-TS6BT1U6VQBG-Service-HTco3SKTy2J1
+    # image - New image that you want to deploy.
+    image: 11111111111.dkr.ecr.us-east-1.amazonaws.com/definitiv-ops-control-panel-agent:2.0.0
+    # environment - environment variables to merge with whats in the existing task definition (within the container definition that matches the service key, as documented above)
+    environment:
+      - name: Beam__ApiBaseUrl
+        value: https://api-acpt.beam.com.au
+      - name: DD_ENV
+        value: client-test
+    # secrets - environment secrets to merge with whats in the existing task definition (within the container definition that matches the service key, as documented above)
+    secrets:
+      - name: Beam__ApiKey
+        valueFrom: arn:aws:secretsmanager:region:aws_account_id:secret:BEAM_API_KEY_ACPT
+    # cpu - defines the cpu units of this service's task definition
+    cpu: 4 vCPU
+    # memory - defines the memory units of this service's task definition
+    memory: 8 GB
