@@ -1,0 +1,127 @@
+{
+    "family": "<TASK_NAME>",
+    "networkMode": "awsvpc",
+    "containerDefinitions": [
+        {
+            "name": "<TASK_NAME>",
+            "image": "<TASK_IMAGE>",
+            "essential": true,
+            "environment": [
+                {
+                    "name": "DD_SERVICE",
+                    "value": "<TASK_NAME>"
+                },
+                {
+                    "name": "DD_ENV",
+                    "value": "<APP_ENV_NAME (ECS CLUSTER NAME)>"
+                },
+                {
+                    "name": "DD_VERSION",
+                    "value": "<TASK_IMAGE_TAG>"
+                },
+                {
+                    "name": "DD_TAGS",
+                    "value": "env-account:<AWS Account Category, eg. dev/qa/staging/prod>"
+                },
+                {
+                    "name": "DD_RUNTIME_METRICS_ENABLED",
+                    "value": true
+                },
+                {
+                    "name": "DD_LOGS_INJECTION",
+                    "value": true
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awsfirelens",
+                "options": {
+                    "Name": "datadog",
+                    "Host": "http-intake.logs.datadoghq.com",
+                    "TLS": "on",
+                    "provider": "ecs",
+                    "compress": "gzip",
+                    "dd_message_key": "log",
+                    "dd_service": "<TASK_NAME>",
+                    "dd_source": "csharp",
+                    "dd_tags": "version:<TASK_IMAGE_TAG>,env:<APP ENV NAME (ECS CLUSTER NAME)>,env-account:<AWS Account Category, eg. dev/qa/staging/prod>"
+                },
+                "secretOptions": [
+                    {
+                        "name": "apikey",
+                        "valueFrom": "arn:aws:secretsmanager:region:aws_account_id:secret:DATADOG_API_KEY"
+                    }
+                ]
+            },
+            "dependsOn": [
+                {
+                    "containerName": "datadog-agent",
+                    "condition": "START"
+                }
+            ]
+        },
+        {
+            "name": "datadog-agent",
+            "image": "public.ecr.aws/datadog/agent:latest",
+            "essential": true,
+            "environment": [
+                {
+                    "name": "ECS_FARGATE",
+                    "value": true
+                },
+                {
+                    "name": "DD_APM_ENABLED",
+                    "value": true
+                },
+                {
+                    "name": "DD_ENV",
+                    "value": "<APP_ENV_NAME (ECS CLUSTER NAME), eg. client-prod/client-test/t1e1/etc>"
+                },
+                {
+                    "name": "DD_TAGS",
+                    "value": "env-account:<AWS Account Category, eg. dev/qa/staging/prod>"
+                }
+            ],
+            "secrets": [
+                {
+                    "name": "DD_API_KEY",
+                    "valueFrom": "arn:aws:secretsmanager:region:aws_account_id:secret:DATADOG_API_KEY"
+                }
+            ],
+            "healthCheck": {
+                "retries": 3,
+                "command": [
+                    "CMD-SHELL",
+                    "agent health"
+                ],
+                "timeout": 5,
+                "interval": 30,
+                "startPeriod": 15
+            },
+            "dependsOn": [
+                {
+                    "containerName": "log_router",
+                    "condition": "START"
+                }
+            ]
+        },
+        {
+            "name": "log_router",
+            "image": "amazon/aws-for-fluent-bit:stable",
+            "essential": true,
+            "firelensConfiguration": {
+                "type": "fluentbit",
+                "options": {
+                    "enable-ecs-log-metadata": "true",
+                    "config-file-type": "file",
+                    "config-file-value": "/fluent-bit/configs/parse-json.conf"
+                }
+            },
+            "memoryReservation": 50
+        }
+    ],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "<TASK_CPU>",
+    "memory": "<TASK_MEMORY>"
+}

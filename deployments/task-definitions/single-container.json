@@ -1,0 +1,16 @@
+{
+    "family": "<TASK_NAME>",
+    "networkMode": "awsvpc",
+    "containerDefinitions": [
+        {
+            "name": "<TASK_NAME>",
+            "image": "<TASK_IMAGE>",
+            "essential": true
+        }
+    ],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "<TASK_CPU>",
+    "memory": "<TASK_MEMORY>"
+}
